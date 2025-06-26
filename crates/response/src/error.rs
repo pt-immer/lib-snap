@@ -1,6 +1,6 @@
 #[derive(Debug, Clone, Default)]
 #[derive(thiserror::Error)]
-pub enum Error<const SERVICE_CODE: u8 = 00> {
+pub enum Error {
     /// General request failed error, including message parsing failed.
     #[error("Bad Request")]
     BadRequest,
@@ -208,7 +208,7 @@ pub enum Error<const SERVICE_CODE: u8 = 00> {
     Timeout,
 }
 
-impl<const SERVICE_CODE: u8> Error<SERVICE_CODE> {
+impl Error {
     pub fn get_category(&self) -> crate::ResponseCategory {
         match self {
             Self::BadRequest => crate::ResponseCategory::System,
@@ -424,10 +424,10 @@ impl<const SERVICE_CODE: u8> Error<SERVICE_CODE> {
         }
     }
 
-    pub fn get_code(&self) -> u32 {
+    pub fn get_code(&self, service_code: u8) -> u32 {
         let http_status_code = (self.get_http_status_code().as_u16() as u32) * 10_000;
         let case_code = self.get_case_code() as u32;
-        let service_code = ((SERVICE_CODE % 100) as u32) * 100;
+        let service_code = ((service_code % 100) as u32) * 100;
 
         http_status_code + service_code + case_code
     }

@@ -1,3 +1,6 @@
+#![allow(clippy::doc_lazy_continuation)]
+#![allow(clippy::zero_prefixed_literal)]
+
 pub mod category;
 pub mod error;
 
@@ -16,23 +19,26 @@ pub struct SNAPResponseCommon {
 }
 
 impl SNAPResponseCommon {
-    pub fn actual_http_code(&self) -> Option<http::StatusCode> {
+    pub fn from_error(error: crate::error::Error, service_code: u8) -> Self {
+        let response_code = error.get_code(service_code);
+        let response_message = error.to_string();
+        let http_code = Some(error.get_http_status_code());
+        let service_code = Some(service_code);
+
+        Self {
+            response_code,
+            response_message,
+            http_code,
+            service_code,
+        }
+    }
+
+    pub fn http_code(&self) -> Option<http::StatusCode> {
         self.http_code
     }
 
-    pub fn actual_service_code(&self) -> Option<u8> {
+    pub fn service_code(&self) -> Option<u8> {
         self.service_code
-    }
-}
-
-impl<const SERVICE_CODE: u8> From<crate::error::Error<SERVICE_CODE>> for SNAPResponseCommon {
-    fn from(error: crate::error::Error<SERVICE_CODE>) -> Self {
-        Self {
-            response_code: error.get_code(),
-            response_message: error.to_string(),
-            http_code: Some(error.get_http_status_code()),
-            service_code: Some(SERVICE_CODE),
-        }
     }
 }
 
@@ -43,7 +49,7 @@ where
     T: serde::Serialize + serde::de::DeserializeOwned,
 {
     #[serde(flatten)]
-    common: SNAPResponseCommon,
+    common: Option<SNAPResponseCommon>,
     #[serde(flatten)]
     payload: Option<T>,
 }
@@ -54,6 +60,15 @@ where
 {
     pub fn get_payload(&self) -> Option<&T> {
         self.payload.as_ref()
+    }
+
+    pub fn from_error(error: crate::error::Error, service_code: u8) -> Self {
+        let common = SNAPResponseCommon::from_error(error, service_code);
+
+        SNAPResponse {
+            common: Some(common),
+            payload: None,
+        }
     }
 }
 
@@ -86,7 +101,10 @@ where
             where
                 M: serde::de::MapAccess<'de>,
             {
-                let mut deserialized_response = SNAPResponse::<T>::from(crate::error::Error::<00>::default());
+                let mut deserialized_response = SNAPResponse::<T> {
+                    common: None,
+                    payload: None,
+                };
 
                 // Collect all key-value pairs into a serde_json::Map
                 let mut value = serde_json::Map::new();
@@ -99,15 +117,15 @@ where
                 match serde_json::from_value::<crate::SNAPResponseCommon>(serde_json::Value::Object(
                     value.clone(),
                 )) {
-                    Ok(common_response) => {
+                    Ok(mut common_response) => {
                         let response_code = common_response.response_code;
                         let http_code = http::StatusCode::from_u16((response_code / 10_000) as u16)
                             .map_err(|x| serde::de::Error::custom(x.to_string()))?;
                         let service_code =
                             (response_code - ((http_code.as_u16() as u32) * 10_000) / 100) as u8;
-                        deserialized_response.common = common_response;
-                        deserialized_response.common.http_code = Some(http_code);
-                        deserialized_response.common.service_code = Some(service_code);
+                        common_response.http_code = Some(http_code);
+                        common_response.service_code = Some(service_code);
+                        deserialized_response.common = Some(common_response);
                     }
                     Err(_) => {
                         return Err(serde::de::Error::custom(
@@ -132,18 +150,6 @@ where
     }
 }
 
-impl<const SERVICE_CODE: u8, T> From<crate::error::Error<SERVICE_CODE>> for SNAPResponse<T>
-where
-    T: serde::Serialize + serde::de::DeserializeOwned,
-{
-    fn from(error: crate::error::Error<SERVICE_CODE>) -> Self {
-        SNAPResponse {
-            common: SNAPResponseCommon::from(error),
-            payload: None,
-        }
-    }
-}
-
 impl<T> actix_web::Responder for SNAPResponse<T>
 where
     T: serde::Serialize + serde::de::DeserializeOwned,
@@ -151,6 +157,8 @@ where
     type Body = actix_web::body::BoxBody;
 
     fn respond_to(self, _: &actix_web::HttpRequest) -> actix_web::HttpResponse<Self::Body> {
-        actix_web::HttpResponseBuilder::new(self.common.http_code.unwrap()).json(self)
+        let http_code = self.common.as_ref().unwrap().http_code().unwrap();
+
+        actix_web::HttpResponseBuilder::new(http_code).json(self)
     }
 }
