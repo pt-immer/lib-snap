@@ -1,0 +1,22 @@
+[workspace.package]
+authors = [
+    "PT IMMER Contributors <https://github.com/pt-immer>",
+    "PT IMMER Engineers <https://github.com/orgs/pt-immer/teams/engineering>",
+]
+edition = "2024"
+license = "MIT"
+publish = false
+repository = "https://github.com/pt-immer/lib-snap"
+version = "1.0.25-beta.7"
+
+[workspace]
+members = ["crates/response"]
+resolver = "2"
+
+[workspace.dependencies]
+actix-web = { version = "4", default-features = false }
+http = "0.2"
+kamu-snap-response = { path = "crates/response" }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+thiserror = "2"

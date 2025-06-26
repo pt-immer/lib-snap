@@ -1,0 +1,16 @@
+[package]
+authors.workspace = true
+description = "Kamu's SNAP Generic Response library"
+edition.workspace = true
+license.workspace = true
+name = "kamu-snap-response"
+publish.workspace = true
+repository.workspace = true
+version.workspace = true
+
+[dependencies]
+actix-web.workspace = true
+http.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
