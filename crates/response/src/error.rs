@@ -1,6 +1,6 @@
 #[derive(Debug, Clone, Default)]
 #[derive(thiserror::Error)]
-pub enum Error<const SERVICE_CODE: u8> {
+pub enum Error<const SERVICE_CODE: u8 = 00> {
     /// General request failed error, including message parsing failed.
     #[error("Bad Request")]
     BadRequest,
@@ -430,25 +430,5 @@ impl<const SERVICE_CODE: u8> Error<SERVICE_CODE> {
         let service_code = ((SERVICE_CODE % 100) as u32) * 100;
 
         http_status_code + service_code + case_code
-    }
-}
-
-#[derive(Debug, Clone)]
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ErrorResponse {
-    response_code: u32,
-    response_message: String,
-    #[serde(skip)]
-    pub(crate) http_code: http::StatusCode,
-}
-
-impl<const SERVICE_CODE: u8> From<Error<SERVICE_CODE>> for ErrorResponse {
-    fn from(error: Error<SERVICE_CODE>) -> Self {
-        Self {
-            response_code: error.get_code(),
-            response_message: error.to_string(),
-            http_code: error.get_http_status_code(),
-        }
     }
 }
