@@ -19,6 +19,19 @@ pub struct SNAPResponseCommon {
 }
 
 impl SNAPResponseCommon {
+    pub fn success(service_code: u8, sub_code: u8) -> Self {
+        let response_code = (service_code as u32) * 100 + (sub_code as u32) + 2_000_000;
+        let response_message = "Successful".to_string();
+        let http_code = http::StatusCode::OK;
+
+        Self {
+            response_code,
+            response_message,
+            http_code: Some(http_code),
+            service_code: Some(service_code),
+        }
+    }
+
     pub fn from_error(error: crate::error::Error, service_code: u8) -> Self {
         let response_code = error.get_code(service_code);
         let response_message = error.to_string();
@@ -60,6 +73,15 @@ where
 {
     pub fn get_payload(&self) -> Option<&T> {
         self.payload.as_ref()
+    }
+
+    pub fn from_payload(payload: T, service_code: u8) -> Self {
+        let common = SNAPResponseCommon::success(service_code, 0);
+
+        SNAPResponse {
+            common: Some(common),
+            payload: Some(payload),
+        }
     }
 
     pub fn from_error(error: crate::error::Error, service_code: u8) -> Self {
