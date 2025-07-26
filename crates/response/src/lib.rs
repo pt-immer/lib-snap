@@ -4,7 +4,12 @@
 pub mod category;
 pub mod error;
 
+mod macros;
+
 pub use category::Category as ResponseCategory;
+pub use error::Error as ResponseError;
+
+pub type Result<T> = core::result::Result<T, ResponseError>;
 
 #[derive(Debug, Clone)]
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -32,7 +37,7 @@ impl SNAPResponseCommon {
         }
     }
 
-    pub fn from_error(error: crate::error::Error, service_code: u8) -> Self {
+    pub fn from_error(error: crate::ResponseError, service_code: u8) -> Self {
         let response_code = error.get_code(service_code);
         let response_message = error.to_string();
         let http_code = Some(error.get_http_status_code());
@@ -98,7 +103,7 @@ impl<'de, T> serde::Deserialize<'de> for SNAPResponse<T>
 where
     T: serde::Serialize + serde::de::DeserializeOwned,
 {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> core::result::Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
     {
@@ -119,7 +124,7 @@ where
                 formatter.write_str("a SNAPResponse struct")
             }
 
-            fn visit_map<M>(self, mut map: M) -> Result<Self::Value, M::Error>
+            fn visit_map<M>(self, mut map: M) -> core::result::Result<Self::Value, M::Error>
             where
                 M: serde::de::MapAccess<'de>,
             {
@@ -182,5 +187,17 @@ where
         let http_code = self.common.as_ref().unwrap().http_code().unwrap();
 
         actix_web::HttpResponseBuilder::new(http_code).json(self)
+    }
+}
+
+impl<T> From<Result<T>> for SNAPResponse<T>
+where
+    T: serde::Serialize + serde::de::DeserializeOwned,
+{
+    fn from(result: Result<T>) -> Self {
+        match result {
+            Ok(payload) => SNAPResponse::from_payload(payload, 0),
+            Err(error) => SNAPResponse::from_error(error, 0),
+        }
     }
 }
