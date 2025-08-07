@@ -39,7 +39,7 @@ impl Crypto {
             .map_err(|_| crate::error::Error::BadSignatureFormat)?;
         hmac::digest::Mac::update(&mut self.inner, payload.as_ref());
         hmac::digest::Mac::verify_slice_reset(&mut self.inner, signature.as_ref())
-            .map_err(|_| crate::error::Error::SignatureVerificationFailed)?;
+            .map_err(|_| crate::error::Error::SignatureVerificationFailedSymmetric)?;
 
         Ok(())
     }

@@ -25,7 +25,7 @@ impl Crypto {
         let signature = rsa::pkcs1v15::Signature::try_from(signature_decoded.as_slice())
             .map_err(|_| crate::CryptoError::BadSignatureFormat)?;
         rsa::signature::Verifier::verify(&self.inner, payload, &signature)
-            .map_err(|_| crate::CryptoError::SignatureVerificationFailed)?;
+            .map_err(|_| crate::CryptoError::SignatureVerificationFailedAsymmetric)?;
 
         Ok(())
     }

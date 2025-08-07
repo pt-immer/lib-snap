@@ -18,7 +18,7 @@ pub struct SNAPResponseCommon {
     response_code: u32,
     response_message: String,
     #[serde(skip)]
-    http_code: Option<http::StatusCode>,
+    http_code: Option<actix_web::http::StatusCode>,
     #[serde(skip)]
     service_code: Option<u8>,
 }
@@ -27,7 +27,7 @@ impl SNAPResponseCommon {
     pub fn success(service_code: u8, sub_code: u8) -> Self {
         let response_code = (service_code as u32) * 100 + (sub_code as u32) + 2_000_000;
         let response_message = "Successful".to_string();
-        let http_code = http::StatusCode::OK;
+        let http_code = actix_web::http::StatusCode::OK;
 
         Self {
             response_code,
@@ -51,7 +51,7 @@ impl SNAPResponseCommon {
         }
     }
 
-    pub fn http_code(&self) -> Option<http::StatusCode> {
+    pub fn http_code(&self) -> Option<actix_web::http::StatusCode> {
         self.http_code
     }
 
@@ -146,8 +146,9 @@ where
                 )) {
                     Ok(mut common_response) => {
                         let response_code = common_response.response_code;
-                        let http_code = http::StatusCode::from_u16((response_code / 10_000) as u16)
-                            .map_err(|x| serde::de::Error::custom(x.to_string()))?;
+                        let http_code =
+                            actix_web::http::StatusCode::from_u16((response_code / 10_000) as u16)
+                                .map_err(|x| serde::de::Error::custom(x.to_string()))?;
                         let service_code =
                             (response_code - ((http_code.as_u16() as u32) * 10_000) / 100) as u8;
                         common_response.http_code = Some(http_code);

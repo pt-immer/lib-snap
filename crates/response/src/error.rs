@@ -275,11 +275,11 @@ impl Error {
         }
     }
 
-    pub fn get_http_status_code(&self) -> http::StatusCode {
+    pub fn get_http_status_code(&self) -> actix_web::http::StatusCode {
         match self {
             // 400 Bad Request
             Self::BadRequest | Self::InvalidFieldFormat(_) | Self::InvalidMandatoryField(_) => {
-                http::StatusCode::BAD_REQUEST
+                actix_web::http::StatusCode::BAD_REQUEST
             }
 
             // 401 Unauthorized
@@ -287,7 +287,7 @@ impl Error {
             | Self::InvalidTokenB2B
             | Self::InvalidCustomerToken
             | Self::TokenNotFoundB2B
-            | Self::CustomerTokenNotFound => http::StatusCode::UNAUTHORIZED,
+            | Self::CustomerTokenNotFound => actix_web::http::StatusCode::UNAUTHORIZED,
 
             // 403 Forbidden
             Self::TransactionExpired
@@ -313,7 +313,7 @@ impl Error {
             | Self::MerchantLimitExceed
             | Self::SetLimitNotAllowed
             | Self::TokenLimitInvalid
-            | Self::AccountLimitExceed => http::StatusCode::FORBIDDEN,
+            | Self::AccountLimitExceed => actix_web::http::StatusCode::FORBIDDEN,
 
             // 404 Not Found
             Self::InvalidOTP
@@ -335,26 +335,26 @@ impl Error {
             | Self::InvalidCardOrAccountOrCustomerOrVirtualAccount(_)
             | Self::InvalidBillOrVirtualAccountWithReason(_)
             | Self::InvalidBillOrVirtualAccount
-            | Self::NeedToRequestOTP => http::StatusCode::NOT_FOUND,
+            | Self::NeedToRequestOTP => actix_web::http::StatusCode::NOT_FOUND,
 
             // 405 Method Not Allowed
             Self::RequestedFunctionIsNotSupported | Self::RequestedOperationIsNotAllowed => {
-                http::StatusCode::METHOD_NOT_ALLOWED
+                actix_web::http::StatusCode::METHOD_NOT_ALLOWED
             }
 
             // 409 Conflict
-            Self::Conflict | Self::DuplicatePartnerReferenceNo => http::StatusCode::CONFLICT,
+            Self::Conflict | Self::DuplicatePartnerReferenceNo => actix_web::http::StatusCode::CONFLICT,
 
             // 429 Too Many Requests
-            Self::TooManyRequests => http::StatusCode::TOO_MANY_REQUESTS,
+            Self::TooManyRequests => actix_web::http::StatusCode::TOO_MANY_REQUESTS,
 
             // 500 Internal Server Error
             Self::GeneralError | Self::InternalServerError | Self::ExternalServerError => {
-                http::StatusCode::INTERNAL_SERVER_ERROR
+                actix_web::http::StatusCode::INTERNAL_SERVER_ERROR
             }
 
             // 504 Gateway Timeout
-            Self::Timeout => http::StatusCode::GATEWAY_TIMEOUT,
+            Self::Timeout => actix_web::http::StatusCode::GATEWAY_TIMEOUT,
         }
     }
 

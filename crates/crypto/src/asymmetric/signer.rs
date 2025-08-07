@@ -16,8 +16,7 @@ impl Crypto {
         let payload = payload.as_ref();
         let signature = rsa::signature::SignerMut::sign(&mut self.inner, payload);
         let signature_bytes = rsa::signature::SignatureEncoding::to_bytes(&signature);
-        let base64_signature = base64::Engine::encode(&base64::prelude::BASE64_STANDARD, signature_bytes);
 
-        base64_signature
+        base64::Engine::encode(&base64::prelude::BASE64_STANDARD, signature_bytes)
     }
 }
