@@ -15,7 +15,7 @@ pub type Result<T> = core::result::Result<T, ResponseError>;
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SNAPResponseCommon {
-    response_code: u32,
+    response_code: String,
     response_message: String,
     #[serde(skip)]
     http_code: Option<actix_web::http::StatusCode>,
@@ -25,7 +25,7 @@ pub struct SNAPResponseCommon {
 
 impl SNAPResponseCommon {
     pub fn success(service_code: u8, sub_code: u8) -> Self {
-        let response_code = (service_code as u32) * 100 + (sub_code as u32) + 2_000_000;
+        let response_code = ((service_code as u32) * 100 + (sub_code as u32) + 2_000_000).to_string();
         let response_message = "Successful".to_string();
         let http_code = actix_web::http::StatusCode::OK;
 
@@ -38,7 +38,7 @@ impl SNAPResponseCommon {
     }
 
     pub fn from_error(error: crate::ResponseError, service_code: u8) -> Self {
-        let response_code = error.get_code(service_code);
+        let response_code = (error.get_code(service_code)).to_string();
         let response_message = error.to_string();
         let http_code = Some(error.get_http_status_code());
         let service_code = Some(service_code);
@@ -145,7 +145,10 @@ where
                     value.clone(),
                 )) {
                     Ok(mut common_response) => {
-                        let response_code = common_response.response_code;
+                        let response_code = common_response.response_code.clone();
+                        let response_code = response_code
+                            .parse::<u32>()
+                            .map_err(|_| serde::de::Error::custom("Invalid responseCode format"))?;
                         let http_code =
                             actix_web::http::StatusCode::from_u16((response_code / 10_000) as u16)
                                 .map_err(|x| serde::de::Error::custom(x.to_string()))?;
