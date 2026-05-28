@@ -27,8 +27,6 @@ Six crates, each leaf or near-leaf:
 - Payload deserialise errors **propagate** instead of silent-`None`.
 - ~55 integration tests landing alongside the rewrite (RFC 4231 HMAC, RSA round-trip, taxonomy table, defensive parser, F-08 regression).
 
-See [`kamu-snap-crypto-review.md`](https://github.com/pt-immer/lib-snap/blob/main/kamu-snap-crypto-review.md) and [`kamu-snap-response-review.md`](https://github.com/pt-immer/lib-snap/blob/main/kamu-snap-response-review.md) for the finding-by-finding source of the redesign.
-
 ## Per-crate quickstart
 
 - [`kamu-snap-crypto/README.md`](crates/crypto/README.md)
