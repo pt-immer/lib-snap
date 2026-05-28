@@ -9,8 +9,5 @@ repository.workspace = true
 version.workspace = true
 
 [dependencies]
-axum.workspace = true
-futures-util = "~0.3"
 http.workspace = true
 kamu-snap-crypto = { workspace = true, features = ["snap-bi"] }
-tower.workspace = true
