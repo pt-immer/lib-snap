@@ -13,10 +13,7 @@ use super::string_to_sign::{OAuthStringToSign, ServiceStringToSign};
 
 /// Sign a SNAP BI service request. Returns the raw signature; callers pick
 /// the wire encoding (BRI prod accepts base64; some sandboxes accept hex).
-pub fn sign_service(
-    client_secret: impl AsRef<[u8]>,
-    parts: &ServiceStringToSign<'_>,
-) -> Result<Signature> {
+pub fn sign_service(client_secret: impl AsRef<[u8]>, parts: &ServiceStringToSign<'_>) -> Result<Signature> {
     let signer = HmacSigner::new(client_secret)?;
     Ok(signer.sign(parts.build()))
 }
@@ -33,10 +30,7 @@ pub fn verify_service(
 
 /// Sign a SNAP BI OAuth `/access-token/b2b` request using the partner's
 /// private RSA key.
-pub fn sign_oauth<S: SignatureScheme>(
-    signer: &RsaSigner<S>,
-    parts: &OAuthStringToSign<'_>,
-) -> Signature {
+pub fn sign_oauth<S: SignatureScheme>(signer: &RsaSigner<S>, parts: &OAuthStringToSign<'_>) -> Signature {
     signer.sign(parts.build())
 }
 

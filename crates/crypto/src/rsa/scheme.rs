@@ -6,7 +6,8 @@ use crate::error::{Error, Result};
 use crate::signature::{Encoding, Signature};
 
 mod sealed {
-    /// Sealing marker — only this crate can implement [`super::SignatureScheme`].
+    /// Sealing marker — only this crate can implement
+    /// [`super::SignatureScheme`].
     pub trait Sealed {}
 }
 

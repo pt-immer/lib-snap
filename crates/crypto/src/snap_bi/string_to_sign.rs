@@ -4,7 +4,8 @@
 //!
 //! - [`ServiceStringToSign`] — the colon-separated form used by every SNAP BI
 //!   service endpoint:
-//!   `HTTPMethod:relativePath:accessToken:lowercaseHex(SHA256(minifiedBody)):timestamp`.
+//!   `HTTPMethod:relativePath:accessToken:lowercaseHex(SHA256(minifiedBody)):
+//!   timestamp`.
 //! - [`OAuthStringToSign`] — the form used by `/access-token/b2b` OAuth:
 //!   `clientId|timestamp`.
 //!
@@ -31,7 +32,8 @@ pub struct ServiceStringToSign<'a> {
     pub access_token: &'a str,
     /// Already-minified request body bytes.
     pub body: &'a [u8],
-    /// ISO-8601 Jakarta timestamp (must match the `X-TIMESTAMP` header byte-for-byte).
+    /// ISO-8601 Jakarta timestamp (must match the `X-TIMESTAMP` header
+    /// byte-for-byte).
     pub timestamp: &'a str,
 }
 

@@ -22,14 +22,11 @@ const AUTHORIZATION: &str = "Authorization";
 
 /// Verify a SNAP BI service request against `client_secret`.
 ///
-/// Reads `X-SIGNATURE`, `X-TIMESTAMP`, and `Authorization` from `parts.headers`;
-/// uses `parts.method` and `parts.uri.path()` for the canonical stringToSign;
-/// hashes the supplied body bytes for the body-hash slot.
-pub fn verify_request(
-    parts: &Parts,
-    body: &[u8],
-    client_secret: &str,
-) -> kamu_snap_crypto::Result<()> {
+/// Reads `X-SIGNATURE`, `X-TIMESTAMP`, and `Authorization` from
+/// `parts.headers`; uses `parts.method` and `parts.uri.path()` for the
+/// canonical stringToSign; hashes the supplied body bytes for the body-hash
+/// slot.
+pub fn verify_request(parts: &Parts, body: &[u8], client_secret: &str) -> kamu_snap_crypto::Result<()> {
     let signature_b64 = header_str(&parts.headers, X_SIGNATURE)?;
     let timestamp = header_str(&parts.headers, X_TIMESTAMP)?;
     let authorization = header_str(&parts.headers, AUTHORIZATION)?;
@@ -47,14 +44,10 @@ pub fn verify_request(
     verify_service(client_secret.as_bytes(), &parts_canonical, &sig)
 }
 
-fn header_str<'a>(
-    headers: &'a http::HeaderMap,
-    name: &'static str,
-) -> kamu_snap_crypto::Result<&'a str> {
+fn header_str<'a>(headers: &'a http::HeaderMap, name: &'static str) -> kamu_snap_crypto::Result<&'a str> {
     headers
         .get(name)
         .ok_or_else(|| kamu_snap_crypto::Error::Webhook(format!("missing header: {name}")))?
         .to_str()
         .map_err(|e| kamu_snap_crypto::Error::Webhook(format!("non-ASCII header {name}: {e}")))
 }
-

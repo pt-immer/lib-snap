@@ -31,8 +31,8 @@ impl HmacSigner {
     /// (current `hmac` 0.12 never does, but the error is surfaced for
     /// forward-compatibility).
     pub fn new(secret: impl AsRef<[u8]>) -> Result<Self> {
-        let inner = <Hmac<Sha512> as Mac>::new_from_slice(secret.as_ref())
-            .map_err(|_| Error::InvalidSecretLength)?;
+        let inner =
+            <Hmac<Sha512> as Mac>::new_from_slice(secret.as_ref()).map_err(|_| Error::InvalidSecretLength)?;
         Ok(Self { inner })
     }
 

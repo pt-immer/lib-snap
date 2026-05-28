@@ -95,10 +95,12 @@ impl Signature {
 
     /// Decode from lowercase or uppercase hex.
     pub fn from_hex(s: impl AsRef<str>) -> Result<Self> {
-        hex::decode(s.as_ref()).map(Self).map_err(|e| Error::SignatureDecode {
-            encoding: Encoding::HexLower,
-            reason: e.to_string(),
-        })
+        hex::decode(s.as_ref())
+            .map(Self)
+            .map_err(|e| Error::SignatureDecode {
+                encoding: Encoding::HexLower,
+                reason: e.to_string(),
+            })
     }
 
     /// Decode using the given [`Encoding`].

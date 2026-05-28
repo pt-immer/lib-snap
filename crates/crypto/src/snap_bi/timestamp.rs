@@ -2,8 +2,8 @@
 //!
 //! Two precisions are used across the SNAP BI surface:
 //!
-//! - **Millisecond**: `yyyy-MM-dd'T'HH:mm:ss.SSS+07:00` — required by the
-//!   OAuth `/access-token/b2b` endpoint's `X-TIMESTAMP` header.
+//! - **Millisecond**: `yyyy-MM-dd'T'HH:mm:ss.SSS+07:00` — required by the OAuth
+//!   `/access-token/b2b` endpoint's `X-TIMESTAMP` header.
 //! - **Second**: `yyyy-MM-dd'T'HH:mm:ss+07:00` — accepted by SNAP BI service
 //!   endpoints and used widely in BRI's documentation examples.
 //!

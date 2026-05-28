@@ -4,11 +4,11 @@
 #![cfg(feature = "snap-bi")]
 
 use http::Method;
-use kamu_snap_crypto::snap_bi::{
-    OAuthStringToSign, Precision, ServiceStringToSign, format_jakarta, sha256_lower_hex,
-    sha512_lower_hex, sign_service, verify_service,
-};
 use kamu_snap_crypto::snap_bi::headers::ServiceHeaders;
+use kamu_snap_crypto::snap_bi::{
+    OAuthStringToSign, Precision, ServiceStringToSign, format_jakarta, sha256_lower_hex, sha512_lower_hex,
+    sign_service, verify_service,
+};
 
 #[test]
 fn sha256_lower_hex_empty_string() {
@@ -47,9 +47,7 @@ fn service_string_to_sign_format() {
     };
     let s = parts.build();
     let body_hash = sha256_lower_hex(b"{}");
-    let expected = format!(
-        "POST:/snap/v1.0/balance-inquiry:eyJxxx:{body_hash}:2024-01-01T00:00:00+07:00"
-    );
+    let expected = format!("POST:/snap/v1.0/balance-inquiry:eyJxxx:{body_hash}:2024-01-01T00:00:00+07:00");
     assert_eq!(s, expected);
 }
 
@@ -110,8 +108,7 @@ fn timestamp_format_seconds() {
 
 #[test]
 fn timestamp_format_millis() {
-    let dt =
-        chrono::DateTime::parse_from_rfc3339("2024-05-27T10:30:45.123+07:00").unwrap();
+    let dt = chrono::DateTime::parse_from_rfc3339("2024-05-27T10:30:45.123+07:00").unwrap();
     assert_eq!(
         format_jakarta(dt, Precision::Millis),
         "2024-05-27T10:30:45.123+07:00"
@@ -120,10 +117,7 @@ fn timestamp_format_millis() {
 
 #[test]
 fn service_headers_builder_rejects_missing_fields() {
-    let result = ServiceHeaders::builder()
-        .partner_id("p")
-        .channel_id("c")
-        .build();
+    let result = ServiceHeaders::builder().partner_id("p").channel_id("c").build();
     assert!(result.is_err(), "builder should reject incomplete state");
 }
 
@@ -139,7 +133,11 @@ fn service_headers_builder_emits_pairs() {
         .build()
         .unwrap();
     let pairs = h.into_pairs();
-    assert!(pairs.iter().any(|(k, v)| *k == "X-PARTNER-ID" && v == "partner-1"));
+    assert!(
+        pairs
+            .iter()
+            .any(|(k, v)| *k == "X-PARTNER-ID" && v == "partner-1")
+    );
     assert!(
         pairs
             .iter()

@@ -39,9 +39,8 @@ pub fn verify_request(
     let authorization = header_str(headers, AUTHORIZATION)?;
     let access_token = authorization.strip_prefix("Bearer ").unwrap_or(authorization);
 
-    let http_method = http::Method::from_bytes(method.as_str().as_bytes()).map_err(|e| {
-        kamu_snap_crypto::Error::Webhook(format!("invalid HTTP method: {e}"))
-    })?;
+    let http_method = http::Method::from_bytes(method.as_str().as_bytes())
+        .map_err(|e| kamu_snap_crypto::Error::Webhook(format!("invalid HTTP method: {e}")))?;
 
     let parts = ServiceStringToSign {
         method: &http_method,

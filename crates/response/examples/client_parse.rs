@@ -6,9 +6,8 @@
 //! 1. Deserialise with the consumer's typed payload `T`.
 //! 2. Inspect `envelope.response_code` defensively — malformed codes do not
 //!    blow up the parse; `.raw()` is always available.
-//! 3. Map back to a typed [`Error`] variant via
-//!    [`ResponseCode::classify`] and decide retry policy from
-//!    [`Error::category`].
+//! 3. Map back to a typed [`Error`] variant via [`ResponseCode::classify`] and
+//!    decide retry policy from [`Error::category`].
 
 use kamu_snap_response::{Category, SnapResponse};
 use serde::Deserialize;
@@ -52,7 +51,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
             None => {
                 if let Some(payload) = resp.payload() {
-                    println!("success! account {} balance {}", payload.account_no, payload.current_balance);
+                    println!(
+                        "success! account {} balance {}",
+                        payload.account_no, payload.current_balance
+                    );
                 } else {
                     println!("unrecognized code with no payload — log and escalate");
                 }

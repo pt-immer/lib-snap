@@ -9,10 +9,10 @@
 //! - [`Signature`] + [`Encoding`] — encoding-agnostic signature bytes; callers
 //!   pick base64 / base64url-nopad / lowercase-hex at the call site.
 //! - [`snap_bi`] (feature `snap-bi`, default on) — canonical stringToSign
-//!   builders, SHA-256/512 lower-hex helpers, Jakarta timestamp formatters,
-//!   and SNAP BI header builders.
-//! - [`webhook`] (feature `webhook`, default on) — provider-extensible
-//!   webhook signature verification (Inacash, BRI VA paid, etc.).
+//!   builders, SHA-256/512 lower-hex helpers, Jakarta timestamp formatters, and
+//!   SNAP BI header builders.
+//! - [`webhook`] (feature `webhook`, default on) — provider-extensible webhook
+//!   signature verification (Inacash, BRI VA paid, etc.).
 //!
 //! # Security guarantees
 //!

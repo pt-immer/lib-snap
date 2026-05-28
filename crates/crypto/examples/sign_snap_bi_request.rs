@@ -4,16 +4,14 @@
 //!
 //! 1. Build canonical `stringToSign` via [`ServiceStringToSign`].
 //! 2. Compute HMAC-SHA512 via [`sign_service`].
-//! 3. Convert to wire encoding (base64 by default; BRI doc-style hex shown
-//!    for comparison).
+//! 3. Convert to wire encoding (base64 by default; BRI doc-style hex shown for
+//!    comparison).
 //! 4. Build the canonical SNAP BI header set via [`ServiceHeaders::builder`].
 
 use http::Method;
 use kamu_snap_crypto::Encoding;
-use kamu_snap_crypto::snap_bi::{
-    ServiceStringToSign, now_jakarta_seconds, sign_service,
-};
 use kamu_snap_crypto::snap_bi::headers::ServiceHeaders;
+use kamu_snap_crypto::snap_bi::{ServiceStringToSign, now_jakarta_seconds, sign_service};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client_id = "client-key-001";

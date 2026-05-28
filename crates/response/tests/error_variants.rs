@@ -34,7 +34,12 @@ fn taxonomy_table() {
     check(SuspectedFraud, 403, 3, Category::Business);
     check(ActivityCountLimitExceeded, 403, 4, Category::Business);
     check(DoNotHonor, 403, 5, Category::Business);
-    check(FeatureNotAllowedAtThisTime(String::new()), 403, 6, Category::System);
+    check(
+        FeatureNotAllowedAtThisTime(String::new()),
+        403,
+        6,
+        Category::System,
+    );
     check(CardBlocked, 403, 7, Category::Business);
     check(CardExpired, 403, 8, Category::Business);
     check(DormantAccount, 403, 9, Category::Business);
@@ -43,7 +48,12 @@ fn taxonomy_table() {
     check(OTPLifetimeExpired, 403, 12, Category::System);
     check(OTPSentToCardholder, 403, 13, Category::System);
     check(InsufficientFunds, 403, 14, Category::Business);
-    check(TransactionNotPermitted(String::new()), 403, 15, Category::Business);
+    check(
+        TransactionNotPermitted(String::new()),
+        403,
+        15,
+        Category::Business,
+    );
     check(SuspendTransaction, 403, 16, Category::Business);
     check(TokenLimitExceeded, 403, 17, Category::Business);
     check(InactiveCardOrAccountOrCustomer, 403, 18, Category::Business);
@@ -58,14 +68,29 @@ fn taxonomy_table() {
     check(InvalidRouting, 404, 2, Category::System);
     check(BankNotSupportedBySwitch, 404, 3, Category::System);
     check(TransactionCancelled, 404, 4, Category::Business);
-    check(MerchantNotRegisteredForCardRegistrationServices, 404, 5, Category::Business);
+    check(
+        MerchantNotRegisteredForCardRegistrationServices,
+        404,
+        5,
+        Category::Business,
+    );
     check(NeedToRequestOTP, 404, 6, Category::System);
     check(JourneyNotFound, 404, 7, Category::System);
     check(InvalidMerchant, 404, 8, Category::Business);
     check(NoIssuer, 404, 9, Category::Business);
     check(InvalidAPITransition, 404, 10, Category::System);
-    check(InvalidCardOrAccountOrCustomerOrVirtualAccount(String::new()), 404, 11, Category::Business);
-    check(InvalidBillOrVirtualAccountWithReason(String::new()), 404, 12, Category::Business);
+    check(
+        InvalidCardOrAccountOrCustomerOrVirtualAccount(String::new()),
+        404,
+        11,
+        Category::Business,
+    );
+    check(
+        InvalidBillOrVirtualAccountWithReason(String::new()),
+        404,
+        12,
+        Category::Business,
+    );
     check(InvalidAmount, 404, 13, Category::Business);
     check(PaidBill, 404, 14, Category::Business);
     check(InvalidOTP, 404, 15, Category::System);
@@ -104,7 +129,9 @@ fn from_http_and_case_round_trips_every_variant() {
     ];
     for (variant, label) in variants {
         let code = variant.response_code(svc);
-        let parsed = code.classify().unwrap_or_else(|| panic!("classify failed for {label}"));
+        let parsed = code
+            .classify()
+            .unwrap_or_else(|| panic!("classify failed for {label}"));
         // Discriminant should match.
         assert_eq!(
             std::mem::discriminant(&parsed),

@@ -99,11 +99,7 @@ pub struct ServiceCode(u8);
 impl ServiceCode {
     /// Construct a `ServiceCode`. Returns `None` for values `>99`.
     pub const fn new(code: u8) -> Option<Self> {
-        if code > 99 {
-            None
-        } else {
-            Some(Self(code))
-        }
+        if code > 99 { None } else { Some(Self(code)) }
     }
 
     /// The underlying value.

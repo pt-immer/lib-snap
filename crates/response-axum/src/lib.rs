@@ -1,8 +1,9 @@
-//! `axum::response::IntoResponse` adapter for [`kamu_snap_response::SnapResponse`].
+//! `axum::response::IntoResponse` adapter for
+//! [`kamu_snap_response::SnapResponse`].
 //!
 //! Wraps `SnapResponse<T>` in a newtype that implements `IntoResponse` for
-//! axum 0.7+. Defensive fallback to `INTERNAL_SERVER_ERROR` if the `responseCode`
-//! cannot be parsed back into an HTTP status.
+//! axum 0.7+. Defensive fallback to `INTERNAL_SERVER_ERROR` if the
+//! `responseCode` cannot be parsed back into an HTTP status.
 
 #![forbid(unsafe_code)]
 

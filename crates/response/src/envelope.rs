@@ -9,8 +9,8 @@
 //!
 //! - Serialises envelope fields + payload fields into one flat JSON object.
 //! - Deserialises envelope fields out, then attempts to deserialise the
-//!   remaining map into `T`. On failure, **propagates the error** (review F-08).
-//!   Silent `payload = None` is gone.
+//!   remaining map into `T`. On failure, **propagates the error** (review
+//!   F-08). Silent `payload = None` is gone.
 
 use crate::error::Error;
 use crate::response_code::{ResponseCode, ServiceCode};
@@ -150,9 +150,7 @@ where
             match serde_json::from_value::<T>(val) {
                 Ok(p) => Some(p),
                 Err(e) => {
-                    return Err(D::Error::custom(format!(
-                        "payload deserialization failed: {e}"
-                    )));
+                    return Err(D::Error::custom(format!("payload deserialization failed: {e}")));
                 }
             }
         };

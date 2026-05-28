@@ -23,8 +23,8 @@
 //! # Feature flags
 //!
 //! - `crypto` (default off) — enables [`Error::Crypto`] which wraps a
-//!   [`kamu_snap_crypto::Error`] for server-side handlers that propagate
-//!   crypto failures into the SNAP error taxonomy.
+//!   [`kamu_snap_crypto::Error`] for server-side handlers that propagate crypto
+//!   failures into the SNAP error taxonomy.
 
 #![forbid(unsafe_code)]
 

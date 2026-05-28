@@ -36,8 +36,7 @@ fn ok_response_serialize_round_trip() {
 #[test]
 fn err_response_serialize_round_trip() {
     let svc = ServiceCode::new(11).unwrap();
-    let resp =
-        SnapResponse::<BalancePayload>::err(Error::Unauthorized("invalid token".into()), svc);
+    let resp = SnapResponse::<BalancePayload>::err(Error::Unauthorized("invalid token".into()), svc);
 
     let wire = serde_json::to_string(&resp).unwrap();
     assert!(wire.contains("\"responseCode\":\"4011100\""));

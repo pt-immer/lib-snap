@@ -135,7 +135,8 @@ pub struct OAuthHeaders {
     pub client_key: String,
     /// `X-TIMESTAMP` — ISO-8601 Jakarta timestamp (millisecond precision).
     pub timestamp: String,
-    /// `X-SIGNATURE` — encoded RSA signature of the canonical OAuth stringToSign.
+    /// `X-SIGNATURE` — encoded RSA signature of the canonical OAuth
+    /// stringToSign.
     pub signature: String,
 }
 
