@@ -20,11 +20,12 @@
 //! - **PKCS#8 enforcement**: legacy PKCS#1 PEMs are rejected by the upstream
 //!   `rsa` crate parsers used here.
 //! - **Constant-time verification**: HMAC verification uses
-//!   [`hmac::Mac::verify_slice`]; RSA verification delegates to
-//!   [`rsa::signature::Verifier::verify`] which is constant-time per upstream
+//!   `hmac::Mac::verify_slice`; RSA verification delegates to
+//!   `rsa::signature::Verifier::verify` which is constant-time per upstream
 //!   documentation.
-//! - **No `actix-web` or HTTP-framework coupling**: this is a leaf crate; it
-//!   compiles cleanly to `wasm32-unknown-unknown` without default features.
+//! - **No `actix-web` or HTTP-framework coupling**: this is a leaf crate.
+//!   `wasm32-unknown-unknown` compiles require the downstream consumer to
+//!   enable `getrandom/js` (pulled transitively via `rsa`).
 
 #![forbid(unsafe_code)]
 

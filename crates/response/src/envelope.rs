@@ -92,9 +92,13 @@ where
         let payload_map: serde_json::Map<String, serde_json::Value> = match &self.payload {
             Some(p) => match serde_json::to_value(p).map_err(S::Error::custom)? {
                 serde_json::Value::Object(m) => m,
+                // Unit-like payloads (`()`, empty tuple structs) serialise to
+                // Null — accepted as a no-op so callers can use
+                // `SnapResponse<()>` for endpoints with no body fields.
+                serde_json::Value::Null => serde_json::Map::new(),
                 _ => {
                     return Err(S::Error::custom(
-                        "SnapResponse payload must serialize as a JSON object",
+                        "SnapResponse payload must serialize as a JSON object or null",
                     ));
                 }
             },

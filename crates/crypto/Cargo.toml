@@ -25,5 +25,7 @@ chrono = { workspace = true, optional = true }
 http = { workspace = true, optional = true }
 
 [dev-dependencies]
+chrono.workspace = true
+http.workspace = true
 proptest.workspace = true
 serde_json.workspace = true
