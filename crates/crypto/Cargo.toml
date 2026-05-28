@@ -1,6 +1,6 @@
 [package]
 authors.workspace = true
-description = "Kamu's SNAP Cryptography library"
+description = "Framework-agnostic cryptography for Bank Indonesia SNAP BI integrations (HMAC, RSA, recipe helpers, webhook verifier)"
 edition.workspace = true
 license.workspace = true
 name = "kamu-snap-crypto"
@@ -8,10 +8,22 @@ publish.workspace = true
 repository.workspace = true
 version.workspace = true
 
+[features]
+default = ["snap-bi", "webhook"]
+snap-bi = ["dep:chrono", "dep:http"]
+webhook = ["dep:http"]
+
 [dependencies]
 base64.workspace = true
+hex.workspace = true
 hmac.workspace = true
-kamu-snap-response = { path = "../response" }
+rand_core = { version = "~0.6", features = ["getrandom"] }
 rsa.workspace = true
 sha2.workspace = true
 thiserror.workspace = true
+chrono = { workspace = true, optional = true }
+http = { workspace = true, optional = true }
+
+[dev-dependencies]
+proptest.workspace = true
+serde_json.workspace = true

@@ -1,0 +1,15 @@
+[package]
+authors.workspace = true
+description = "actix-web inbound-verify middleware for kamu-snap-crypto SNAP BI signatures"
+edition.workspace = true
+license.workspace = true
+name = "kamu-snap-crypto-actix"
+publish.workspace = true
+repository.workspace = true
+version.workspace = true
+
+[dependencies]
+actix-web.workspace = true
+futures-util = "~0.3"
+http.workspace = true
+kamu-snap-crypto = { workspace = true, features = ["snap-bi"] }

@@ -1,0 +1,15 @@
+[package]
+authors.workspace = true
+description = "actix-web Responder adapter for kamu-snap-response"
+edition.workspace = true
+license.workspace = true
+name = "kamu-snap-response-actix"
+publish.workspace = true
+repository.workspace = true
+version.workspace = true
+
+[dependencies]
+actix-web.workspace = true
+http.workspace = true
+kamu-snap-response.workspace = true
+serde.workspace = true

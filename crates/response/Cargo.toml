@@ -1,6 +1,6 @@
 [package]
 authors.workspace = true
-description = "Kamu's SNAP Generic Response library"
+description = "Framework-agnostic response envelope + error taxonomy for Bank Indonesia SNAP BI integrations"
 edition.workspace = true
 license.workspace = true
 name = "kamu-snap-response"
@@ -8,8 +8,17 @@ publish.workspace = true
 repository.workspace = true
 version.workspace = true
 
+[features]
+default = []
+crypto = ["dep:kamu-snap-crypto"]
+
 [dependencies]
-actix-web.workspace = true
+http.workspace = true
+phf.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
+kamu-snap-crypto = { workspace = true, optional = true }
+
+[dev-dependencies]
+serde_json.workspace = true

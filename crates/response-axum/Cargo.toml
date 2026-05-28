@@ -1,0 +1,15 @@
+[package]
+authors.workspace = true
+description = "axum IntoResponse adapter for kamu-snap-response"
+edition.workspace = true
+license.workspace = true
+name = "kamu-snap-response-axum"
+publish.workspace = true
+repository.workspace = true
+version.workspace = true
+
+[dependencies]
+axum.workspace = true
+http.workspace = true
+kamu-snap-response.workspace = true
+serde.workspace = true

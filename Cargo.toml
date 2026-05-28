@@ -7,20 +7,39 @@ edition = "2024"
 license = "MIT"
 publish = false
 repository = "https://github.com/pt-immer/lib-snap"
-version = "1.0.25-20250809"
+version = "2.0.0"
 
 [workspace]
-members = ["crates/crypto", "crates/response"]
+members = [
+    "crates/crypto",
+    "crates/crypto-actix",
+    "crates/crypto-axum",
+    "crates/response",
+    "crates/response-actix",
+    "crates/response-axum",
+]
 resolver = "2"
 
 [workspace.dependencies]
 actix-web = { version = "~4", default-features = false }
+axum = { version = "~0.7", default-features = false, features = ["json"] }
 base64 = "~0.22"
+chrono = { version = "~0.4", default-features = false, features = ["clock", "std"] }
+hex = "~0.4"
 hmac = { version = "~0.12", features = ["reset", "std"] }
-kamu-snap-crypto = { path = "crates/crypto" }
-kamu-snap-response = { path = "crates/response" }
-rsa = { version = "~0.9", features = ["getrandom", "serde", "sha2"] }
+http = "~1"
+phf = { version = "~0.11", features = ["macros"] }
+rsa = { version = "~0.9", features = ["getrandom", "sha2"] }
 serde = { version = "~1", features = ["derive"] }
 serde_json = { version = "~1", features = ["preserve_order"] }
 sha2 = { version = "~0.10", features = ["asm", "compress", "oid"] }
 thiserror = "~2"
+tower = { version = "~0.5", default-features = false }
+proptest = "~1"
+
+kamu-snap-crypto = { path = "crates/crypto", version = "2" }
+kamu-snap-crypto-actix = { path = "crates/crypto-actix", version = "2" }
+kamu-snap-crypto-axum = { path = "crates/crypto-axum", version = "2" }
+kamu-snap-response = { path = "crates/response", version = "2" }
+kamu-snap-response-actix = { path = "crates/response-actix", version = "2" }
+kamu-snap-response-axum = { path = "crates/response-axum", version = "2" }
