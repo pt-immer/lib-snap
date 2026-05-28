@@ -1,5 +1,26 @@
-#[derive(Debug, Clone, Default)]
-#[derive(thiserror::Error)]
+//! SNAP BI error taxonomy.
+//!
+//! Every variant carries a fixed `(http_status, case_code, category)` triple
+//! exposed via [`Error::http_status`], [`Error::case_code`], and
+//! [`Error::category`]. The full wire `responseCode` is composed via
+//! [`Error::response_code`].
+//!
+//! Compared to v1.x:
+//!
+//! - `Unathorized` is renamed to [`Error::Unauthorized`] (hard rename).
+//! - `#[non_exhaustive]` is present — new variants are non-breaking.
+//! - The `#[default]` derive on `GeneralError` is dropped — callers must
+//!   construct an `Error` explicitly. No silent 500 fallback.
+//! - Method names lose their `get_` prefix.
+//! - Returns [`http::StatusCode`], not `actix_web::http::StatusCode`. Actix
+//!   re-exports the same upstream type, so existing consumers see no change.
+
+use crate::category::Category;
+use crate::response_code::{ResponseCode, ServiceCode};
+
+/// All known SNAP BI error variants plus a feature-gated `Crypto` bridge.
+#[derive(Debug, thiserror::Error)]
+#[non_exhaustive]
 pub enum Error {
     /// General request failed error, including message parsing failed.
     #[error("Bad Request")]
@@ -12,9 +33,9 @@ pub enum Error {
     InvalidMandatoryField(String),
     /// General unauthorized error (No Interface Def, API is Invalid, Oauth
     /// Failed, Verify Client Secret Fail, Client Forbidden Access API, Unknown
-    /// Client, Key not Found)
+    /// Client, Key not Found).
     #[error("Unauthorized. {0}")]
-    Unathorized(String),
+    Unauthorized(String),
     /// Token found in request is invalid (Access Token Not Exist, Access Token
     /// Expiry)
     #[error("Invalid Token (B2B)")]
@@ -43,13 +64,13 @@ pub enum Error {
     /// Suspected Fraud
     #[error("Suspected Fraud")]
     SuspectedFraud,
-    /// Too many request, Exceeds Transaction Frequency Limit
+    /// Too many requests, exceeds transaction frequency limit
     #[error("Activity Count Limit Exceeded")]
     ActivityCountLimitExceeded,
     /// Account or User status is abnormal
     #[error("Do Not Honor")]
     DoNotHonor,
-    /// Cut off In Progress
+    /// Cut off in progress
     #[error("Feature Not Allowed At This Time. {0}")]
     FeatureNotAllowedAtThisTime(String),
     /// The payment card is blocked
@@ -73,19 +94,19 @@ pub enum Error {
     /// Initiates request OTP to the issuer
     #[error("OTP Sent To Cardholder")]
     OTPSentToCardholder,
-    /// Insufficient Funds
+    /// Insufficient funds
     #[error("Insufficient Funds")]
     InsufficientFunds,
-    /// Transaction Not Permitted
+    /// Transaction not permitted
     #[error("Transaction Not Permitted. {0}")]
     TransactionNotPermitted(String),
-    /// Suspend Transaction
+    /// Suspend transaction
     #[error("Suspend Transaction")]
     SuspendTransaction,
     /// Purchase amount exceeds the token limit set prior
     #[error("Token Limit Exceeded")]
     TokenLimitExceeded,
-    /// Indicates inactive account
+    /// Inactive account
     #[error("Inactive Card/Account/Customer")]
     InactiveCardOrAccountOrCustomer,
     /// Merchant is suspended from calling any APIs
@@ -110,7 +131,7 @@ pub enum Error {
     /// Transaction not found
     #[error("Transaction Not Found")]
     TransactionNotFound,
-    /// Invalid Routing
+    /// Invalid routing
     #[error("Invalid Routing")]
     InvalidRouting,
     /// Bank not supported by switch
@@ -160,17 +181,7 @@ pub enum Error {
     #[error("Invalid Terminal")]
     InvalidTerminal,
     /// Inconsistent request parameter found for the same partner reference
-    /// number/transaction id It can be considered as failed in transfer
-    /// debit, but it should be considered as success in transfer credit.
-    /// Considered as success:
-    /// - Transfer credit = (i) Intrabank transfer; (ii) Interbank transfer;
-    ///   (iii) RTGS transfer; (iv) SKNBI transfer;
-    /// - Virtual account = (i) Payment VA; (ii) Payment to VA;
-    /// - Transfer debit = (i) Refund payment; (ii) Void;
-    /// Considered as failed:
-    /// - Transfer credit = (i) Transfer to OTC;
-    /// - Transfer debit = (i) Direct debit payment; (ii) QR CPM payment; (iii)
-    ///   Auth payment; (iv) Capture;
+    /// number/transaction id.
     #[error("Inconsistent Request")]
     InconsistentRequest,
     /// The bill is expired.
@@ -179,9 +190,9 @@ pub enum Error {
     /// Requested function is not supported
     #[error("Requested Function Is Not Supported")]
     RequestedFunctionIsNotSupported,
-    /// Requested operation to cancel/refund transaction Is not allowed at this
+    /// Requested operation to cancel/refund transaction is not allowed at this
     /// time.
-    #[error("Requested Opearation Is Not Allowed")]
+    #[error("Requested Operation Is Not Allowed")]
     RequestedOperationIsNotAllowed,
     /// Cannot use same X-EXTERNAL-ID in same day
     #[error("Conflict")]
@@ -195,101 +206,107 @@ pub enum Error {
     TooManyRequests,
     /// General Error
     #[error("General Error")]
-    #[default]
     GeneralError,
-    /// Unknown Internal Server Failure, Please retry the process again
+    /// Unknown internal server failure, please retry the process again
     #[error("Internal Server Error")]
     InternalServerError,
-    /// Backend system failure, etc
+    /// Backend system failure, etc.
     #[error("External Server Error")]
     ExternalServerError,
     /// Timeout from the issuer
     #[error("Timeout")]
     Timeout,
+
+    /// Bridge variant carrying a [`kamu_snap_crypto::Error`]. Only present
+    /// when the `crypto` feature is enabled.
+    #[cfg(feature = "crypto")]
+    #[error("crypto error: {0}")]
+    Crypto(#[from] kamu_snap_crypto::Error),
 }
 
 impl Error {
-    pub fn get_category(&self) -> crate::ResponseCategory {
+    /// Coarse [`Category`] for retry-policy / logging consumers.
+    pub fn category(&self) -> Category {
         match self {
-            Self::BadRequest => crate::ResponseCategory::System,
-            Self::InvalidFieldFormat(_) => crate::ResponseCategory::Message,
-            Self::InvalidMandatoryField(_) => crate::ResponseCategory::Message,
-            Self::Unathorized(_) => crate::ResponseCategory::System,
-            Self::InvalidTokenB2B => crate::ResponseCategory::System,
-            Self::InvalidCustomerToken => crate::ResponseCategory::System,
-            Self::TokenNotFoundB2B => crate::ResponseCategory::System,
-            Self::CustomerTokenNotFound => crate::ResponseCategory::System,
-            Self::TransactionExpired => crate::ResponseCategory::Business,
-            Self::FeatureNotAllowed(_) => crate::ResponseCategory::System,
-            Self::ExceedsTransactionAmountLimit => crate::ResponseCategory::Business,
-            Self::SuspectedFraud => crate::ResponseCategory::Business,
-            Self::ActivityCountLimitExceeded => crate::ResponseCategory::Business,
-            Self::DoNotHonor => crate::ResponseCategory::Business,
-            Self::FeatureNotAllowedAtThisTime(_) => crate::ResponseCategory::System,
-            Self::CardBlocked => crate::ResponseCategory::Business,
-            Self::CardExpired => crate::ResponseCategory::Business,
-            Self::DormantAccount => crate::ResponseCategory::Business,
-            Self::NeedToSetTokenLimit => crate::ResponseCategory::Business,
-            Self::OTPBlocked => crate::ResponseCategory::System,
-            Self::OTPLifetimeExpired => crate::ResponseCategory::System,
-            Self::OTPSentToCardholder => crate::ResponseCategory::System,
-            Self::InsufficientFunds => crate::ResponseCategory::Business,
-            Self::TransactionNotPermitted(_) => crate::ResponseCategory::Business,
-            Self::SuspendTransaction => crate::ResponseCategory::Business,
-            Self::TokenLimitExceeded => crate::ResponseCategory::Business,
-            Self::InactiveCardOrAccountOrCustomer => crate::ResponseCategory::Business,
-            Self::MerchantBlacklisted => crate::ResponseCategory::Business,
-            Self::MerchantLimitExceed => crate::ResponseCategory::Business,
-            Self::SetLimitNotAllowed => crate::ResponseCategory::Business,
-            Self::TokenLimitInvalid => crate::ResponseCategory::Business,
-            Self::AccountLimitExceed => crate::ResponseCategory::Business,
-            Self::InvalidTransactionStatus => crate::ResponseCategory::Business,
-            Self::TransactionNotFound => crate::ResponseCategory::Business,
-            Self::InvalidRouting => crate::ResponseCategory::System,
-            Self::BankNotSupportedBySwitch => crate::ResponseCategory::System,
-            Self::TransactionCancelled => crate::ResponseCategory::Business,
-            Self::MerchantNotRegisteredForCardRegistrationServices => crate::ResponseCategory::Business,
-            Self::NeedToRequestOTP => crate::ResponseCategory::System,
-            Self::JourneyNotFound => crate::ResponseCategory::System,
-            Self::InvalidMerchant => crate::ResponseCategory::Business,
-            Self::NoIssuer => crate::ResponseCategory::Business,
-            Self::InvalidAPITransition => crate::ResponseCategory::System,
-            Self::InvalidCardOrAccountOrCustomerOrVirtualAccount(_) => crate::ResponseCategory::Business,
-            Self::InvalidBillOrVirtualAccountWithReason(_) => crate::ResponseCategory::Business,
-            Self::InvalidAmount => crate::ResponseCategory::Business,
-            Self::PaidBill => crate::ResponseCategory::Business,
-            Self::InvalidOTP => crate::ResponseCategory::System,
-            Self::PartnerNotFound => crate::ResponseCategory::Business,
-            Self::InvalidTerminal => crate::ResponseCategory::Business,
-            Self::InconsistentRequest => crate::ResponseCategory::Business,
-            Self::InvalidBillOrVirtualAccount => crate::ResponseCategory::Business,
-            Self::RequestedFunctionIsNotSupported => crate::ResponseCategory::System,
-            Self::RequestedOperationIsNotAllowed => crate::ResponseCategory::Business,
-            Self::Conflict => crate::ResponseCategory::System,
-            Self::DuplicatePartnerReferenceNo => crate::ResponseCategory::System,
-            Self::TooManyRequests => crate::ResponseCategory::System,
-            Self::GeneralError => crate::ResponseCategory::System,
-            Self::InternalServerError => crate::ResponseCategory::System,
-            Self::ExternalServerError => crate::ResponseCategory::System,
-            Self::Timeout => crate::ResponseCategory::System,
+            Self::BadRequest => Category::System,
+            Self::InvalidFieldFormat(_) => Category::Message,
+            Self::InvalidMandatoryField(_) => Category::Message,
+            Self::Unauthorized(_) => Category::System,
+            Self::InvalidTokenB2B => Category::System,
+            Self::InvalidCustomerToken => Category::System,
+            Self::TokenNotFoundB2B => Category::System,
+            Self::CustomerTokenNotFound => Category::System,
+            Self::TransactionExpired => Category::Business,
+            Self::FeatureNotAllowed(_) => Category::System,
+            Self::ExceedsTransactionAmountLimit => Category::Business,
+            Self::SuspectedFraud => Category::Business,
+            Self::ActivityCountLimitExceeded => Category::Business,
+            Self::DoNotHonor => Category::Business,
+            Self::FeatureNotAllowedAtThisTime(_) => Category::System,
+            Self::CardBlocked => Category::Business,
+            Self::CardExpired => Category::Business,
+            Self::DormantAccount => Category::Business,
+            Self::NeedToSetTokenLimit => Category::Business,
+            Self::OTPBlocked => Category::System,
+            Self::OTPLifetimeExpired => Category::System,
+            Self::OTPSentToCardholder => Category::System,
+            Self::InsufficientFunds => Category::Business,
+            Self::TransactionNotPermitted(_) => Category::Business,
+            Self::SuspendTransaction => Category::Business,
+            Self::TokenLimitExceeded => Category::Business,
+            Self::InactiveCardOrAccountOrCustomer => Category::Business,
+            Self::MerchantBlacklisted => Category::Business,
+            Self::MerchantLimitExceed => Category::Business,
+            Self::SetLimitNotAllowed => Category::Business,
+            Self::TokenLimitInvalid => Category::Business,
+            Self::AccountLimitExceed => Category::Business,
+            Self::InvalidTransactionStatus => Category::Business,
+            Self::TransactionNotFound => Category::Business,
+            Self::InvalidRouting => Category::System,
+            Self::BankNotSupportedBySwitch => Category::System,
+            Self::TransactionCancelled => Category::Business,
+            Self::MerchantNotRegisteredForCardRegistrationServices => Category::Business,
+            Self::NeedToRequestOTP => Category::System,
+            Self::JourneyNotFound => Category::System,
+            Self::InvalidMerchant => Category::Business,
+            Self::NoIssuer => Category::Business,
+            Self::InvalidAPITransition => Category::System,
+            Self::InvalidCardOrAccountOrCustomerOrVirtualAccount(_) => Category::Business,
+            Self::InvalidBillOrVirtualAccountWithReason(_) => Category::Business,
+            Self::InvalidAmount => Category::Business,
+            Self::PaidBill => Category::Business,
+            Self::InvalidOTP => Category::System,
+            Self::PartnerNotFound => Category::Business,
+            Self::InvalidTerminal => Category::Business,
+            Self::InconsistentRequest => Category::Business,
+            Self::InvalidBillOrVirtualAccount => Category::Business,
+            Self::RequestedFunctionIsNotSupported => Category::System,
+            Self::RequestedOperationIsNotAllowed => Category::Business,
+            Self::Conflict => Category::System,
+            Self::DuplicatePartnerReferenceNo => Category::System,
+            Self::TooManyRequests => Category::System,
+            Self::GeneralError => Category::System,
+            Self::InternalServerError => Category::System,
+            Self::ExternalServerError => Category::System,
+            Self::Timeout => Category::System,
+            #[cfg(feature = "crypto")]
+            Self::Crypto(_) => Category::System,
         }
     }
 
-    pub fn get_http_status_code(&self) -> actix_web::http::StatusCode {
+    /// HTTP status code mapped per the SNAP BI taxonomy.
+    pub fn http_status(&self) -> http::StatusCode {
         match self {
-            // 400 Bad Request
             Self::BadRequest | Self::InvalidFieldFormat(_) | Self::InvalidMandatoryField(_) => {
-                actix_web::http::StatusCode::BAD_REQUEST
+                http::StatusCode::BAD_REQUEST
             }
 
-            // 401 Unauthorized
-            Self::Unathorized(_)
+            Self::Unauthorized(_)
             | Self::InvalidTokenB2B
             | Self::InvalidCustomerToken
             | Self::TokenNotFoundB2B
-            | Self::CustomerTokenNotFound => actix_web::http::StatusCode::UNAUTHORIZED,
+            | Self::CustomerTokenNotFound => http::StatusCode::UNAUTHORIZED,
 
-            // 403 Forbidden
             Self::TransactionExpired
             | Self::FeatureNotAllowed(_)
             | Self::ExceedsTransactionAmountLimit
@@ -313,9 +330,8 @@ impl Error {
             | Self::MerchantLimitExceed
             | Self::SetLimitNotAllowed
             | Self::TokenLimitInvalid
-            | Self::AccountLimitExceed => actix_web::http::StatusCode::FORBIDDEN,
+            | Self::AccountLimitExceed => http::StatusCode::FORBIDDEN,
 
-            // 404 Not Found
             Self::InvalidOTP
             | Self::InvalidTransactionStatus
             | Self::TransactionCancelled
@@ -335,49 +351,48 @@ impl Error {
             | Self::InvalidCardOrAccountOrCustomerOrVirtualAccount(_)
             | Self::InvalidBillOrVirtualAccountWithReason(_)
             | Self::InvalidBillOrVirtualAccount
-            | Self::NeedToRequestOTP => actix_web::http::StatusCode::NOT_FOUND,
+            | Self::NeedToRequestOTP => http::StatusCode::NOT_FOUND,
 
-            // 405 Method Not Allowed
             Self::RequestedFunctionIsNotSupported | Self::RequestedOperationIsNotAllowed => {
-                actix_web::http::StatusCode::METHOD_NOT_ALLOWED
+                http::StatusCode::METHOD_NOT_ALLOWED
             }
 
-            // 409 Conflict
-            Self::Conflict | Self::DuplicatePartnerReferenceNo => actix_web::http::StatusCode::CONFLICT,
+            Self::Conflict | Self::DuplicatePartnerReferenceNo => http::StatusCode::CONFLICT,
 
-            // 429 Too Many Requests
-            Self::TooManyRequests => actix_web::http::StatusCode::TOO_MANY_REQUESTS,
+            Self::TooManyRequests => http::StatusCode::TOO_MANY_REQUESTS,
 
-            // 500 Internal Server Error
             Self::GeneralError | Self::InternalServerError | Self::ExternalServerError => {
-                actix_web::http::StatusCode::INTERNAL_SERVER_ERROR
+                http::StatusCode::INTERNAL_SERVER_ERROR
             }
 
-            // 504 Gateway Timeout
-            Self::Timeout => actix_web::http::StatusCode::GATEWAY_TIMEOUT,
+            Self::Timeout => http::StatusCode::GATEWAY_TIMEOUT,
+
+            #[cfg(feature = "crypto")]
+            Self::Crypto(_) => http::StatusCode::UNAUTHORIZED,
         }
     }
 
-    pub fn get_case_code(&self) -> u8 {
+    /// 2-digit case code embedded in the `responseCode`.
+    pub fn case_code(&self) -> u8 {
         match self {
-            Self::BadRequest => 00,
-            Self::InvalidFieldFormat(_) => 01,
-            Self::InvalidMandatoryField(_) => 02,
-            Self::Unathorized(_) => 00,
-            Self::InvalidTokenB2B => 01,
-            Self::InvalidCustomerToken => 02,
-            Self::TokenNotFoundB2B => 03,
-            Self::CustomerTokenNotFound => 04,
-            Self::TransactionExpired => 00,
-            Self::FeatureNotAllowed(_) => 01,
-            Self::ExceedsTransactionAmountLimit => 02,
-            Self::SuspectedFraud => 03,
-            Self::ActivityCountLimitExceeded => 04,
-            Self::DoNotHonor => 05,
-            Self::FeatureNotAllowedAtThisTime(_) => 06,
-            Self::CardBlocked => 07,
-            Self::CardExpired => 08,
-            Self::DormantAccount => 09,
+            Self::BadRequest => 0,
+            Self::InvalidFieldFormat(_) => 1,
+            Self::InvalidMandatoryField(_) => 2,
+            Self::Unauthorized(_) => 0,
+            Self::InvalidTokenB2B => 1,
+            Self::InvalidCustomerToken => 2,
+            Self::TokenNotFoundB2B => 3,
+            Self::CustomerTokenNotFound => 4,
+            Self::TransactionExpired => 0,
+            Self::FeatureNotAllowed(_) => 1,
+            Self::ExceedsTransactionAmountLimit => 2,
+            Self::SuspectedFraud => 3,
+            Self::ActivityCountLimitExceeded => 4,
+            Self::DoNotHonor => 5,
+            Self::FeatureNotAllowedAtThisTime(_) => 6,
+            Self::CardBlocked => 7,
+            Self::CardExpired => 8,
+            Self::DormantAccount => 9,
             Self::NeedToSetTokenLimit => 10,
             Self::OTPBlocked => 11,
             Self::OTPLifetimeExpired => 12,
@@ -392,16 +407,16 @@ impl Error {
             Self::SetLimitNotAllowed => 21,
             Self::TokenLimitInvalid => 22,
             Self::AccountLimitExceed => 23,
-            Self::InvalidTransactionStatus => 00,
-            Self::TransactionNotFound => 01,
-            Self::InvalidRouting => 02,
-            Self::BankNotSupportedBySwitch => 03,
-            Self::TransactionCancelled => 04,
-            Self::MerchantNotRegisteredForCardRegistrationServices => 05,
-            Self::NeedToRequestOTP => 06,
-            Self::JourneyNotFound => 07,
-            Self::InvalidMerchant => 08,
-            Self::NoIssuer => 09,
+            Self::InvalidTransactionStatus => 0,
+            Self::TransactionNotFound => 1,
+            Self::InvalidRouting => 2,
+            Self::BankNotSupportedBySwitch => 3,
+            Self::TransactionCancelled => 4,
+            Self::MerchantNotRegisteredForCardRegistrationServices => 5,
+            Self::NeedToRequestOTP => 6,
+            Self::JourneyNotFound => 7,
+            Self::InvalidMerchant => 8,
+            Self::NoIssuer => 9,
             Self::InvalidAPITransition => 10,
             Self::InvalidCardOrAccountOrCustomerOrVirtualAccount(_) => 11,
             Self::InvalidBillOrVirtualAccountWithReason(_) => 12,
@@ -412,23 +427,102 @@ impl Error {
             Self::InvalidTerminal => 17,
             Self::InconsistentRequest => 18,
             Self::InvalidBillOrVirtualAccount => 19,
-            Self::RequestedFunctionIsNotSupported => 00,
-            Self::RequestedOperationIsNotAllowed => 01,
-            Self::Conflict => 00,
-            Self::DuplicatePartnerReferenceNo => 01,
-            Self::TooManyRequests => 00,
-            Self::GeneralError => 00,
-            Self::InternalServerError => 01,
-            Self::ExternalServerError => 02,
-            Self::Timeout => 00,
+            Self::RequestedFunctionIsNotSupported => 0,
+            Self::RequestedOperationIsNotAllowed => 1,
+            Self::Conflict => 0,
+            Self::DuplicatePartnerReferenceNo => 1,
+            Self::TooManyRequests => 0,
+            Self::GeneralError => 0,
+            Self::InternalServerError => 1,
+            Self::ExternalServerError => 2,
+            Self::Timeout => 0,
+            #[cfg(feature = "crypto")]
+            Self::Crypto(_) => 0,
         }
     }
 
-    pub fn get_code(&self, service_code: u8) -> u32 {
-        let http_status_code = (self.get_http_status_code().as_u16() as u32) * 10_000;
-        let case_code = self.get_case_code() as u32;
-        let service_code = ((service_code % 100) as u32) * 100;
+    /// Compose the full wire `responseCode` for this variant under `service`.
+    pub fn response_code(&self, service: ServiceCode) -> ResponseCode {
+        ResponseCode::from_parts(self.http_status().as_u16(), service, self.case_code())
+    }
 
-        http_status_code + service_code + case_code
+    /// Inverse classifier — given a received `(http, case)`, return the
+    /// matching variant with empty payload for string-bearing variants.
+    /// `None` for unknown pairs.
+    pub fn from_http_and_case(http: u16, case: u8) -> Option<Self> {
+        use Error::*;
+        Some(match (http, case) {
+            (400, 0) => BadRequest,
+            (400, 1) => InvalidFieldFormat(String::new()),
+            (400, 2) => InvalidMandatoryField(String::new()),
+
+            (401, 0) => Unauthorized(String::new()),
+            (401, 1) => InvalidTokenB2B,
+            (401, 2) => InvalidCustomerToken,
+            (401, 3) => TokenNotFoundB2B,
+            (401, 4) => CustomerTokenNotFound,
+
+            (403, 0) => TransactionExpired,
+            (403, 1) => FeatureNotAllowed(String::new()),
+            (403, 2) => ExceedsTransactionAmountLimit,
+            (403, 3) => SuspectedFraud,
+            (403, 4) => ActivityCountLimitExceeded,
+            (403, 5) => DoNotHonor,
+            (403, 6) => FeatureNotAllowedAtThisTime(String::new()),
+            (403, 7) => CardBlocked,
+            (403, 8) => CardExpired,
+            (403, 9) => DormantAccount,
+            (403, 10) => NeedToSetTokenLimit,
+            (403, 11) => OTPBlocked,
+            (403, 12) => OTPLifetimeExpired,
+            (403, 13) => OTPSentToCardholder,
+            (403, 14) => InsufficientFunds,
+            (403, 15) => TransactionNotPermitted(String::new()),
+            (403, 16) => SuspendTransaction,
+            (403, 17) => TokenLimitExceeded,
+            (403, 18) => InactiveCardOrAccountOrCustomer,
+            (403, 19) => MerchantBlacklisted,
+            (403, 20) => MerchantLimitExceed,
+            (403, 21) => SetLimitNotAllowed,
+            (403, 22) => TokenLimitInvalid,
+            (403, 23) => AccountLimitExceed,
+
+            (404, 0) => InvalidTransactionStatus,
+            (404, 1) => TransactionNotFound,
+            (404, 2) => InvalidRouting,
+            (404, 3) => BankNotSupportedBySwitch,
+            (404, 4) => TransactionCancelled,
+            (404, 5) => MerchantNotRegisteredForCardRegistrationServices,
+            (404, 6) => NeedToRequestOTP,
+            (404, 7) => JourneyNotFound,
+            (404, 8) => InvalidMerchant,
+            (404, 9) => NoIssuer,
+            (404, 10) => InvalidAPITransition,
+            (404, 11) => InvalidCardOrAccountOrCustomerOrVirtualAccount(String::new()),
+            (404, 12) => InvalidBillOrVirtualAccountWithReason(String::new()),
+            (404, 13) => InvalidAmount,
+            (404, 14) => PaidBill,
+            (404, 15) => InvalidOTP,
+            (404, 16) => PartnerNotFound,
+            (404, 17) => InvalidTerminal,
+            (404, 18) => InconsistentRequest,
+            (404, 19) => InvalidBillOrVirtualAccount,
+
+            (405, 0) => RequestedFunctionIsNotSupported,
+            (405, 1) => RequestedOperationIsNotAllowed,
+
+            (409, 0) => Conflict,
+            (409, 1) => DuplicatePartnerReferenceNo,
+
+            (429, 0) => TooManyRequests,
+
+            (500, 0) => GeneralError,
+            (500, 1) => InternalServerError,
+            (500, 2) => ExternalServerError,
+
+            (504, 0) => Timeout,
+
+            _ => return None,
+        })
     }
 }
